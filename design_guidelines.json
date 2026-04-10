@@ -1,0 +1,166 @@
+{
+  "theme_and_archetype": {
+    "domain": "Social/Romance Mobile App",
+    "theme": "Light Theme",
+    "archetype": "Archetype 3 (Pastel & Soft) infused with vibrant Barbie Pink accents",
+    "emotional_tone": "Romantic, playful, delightful, intimate, slightly theatrical"
+  },
+  "colors": {
+    "background": {
+      "primary": "#FFFFFF",
+      "secondary": "#FFF0F5",
+      "overlay": "rgba(255, 20, 147, 0.08)"
+    },
+    "brand": {
+      "primary": "#FF1493",
+      "secondary": "#FF69B4",
+      "tertiary": "#FFB6C1"
+    },
+    "text": {
+      "primary": "#1A1423",
+      "secondary": "#6A5D7B",
+      "inverse": "#FFFFFF",
+      "accent": "#FF1493"
+    },
+    "borders": {
+      "light": "rgba(255, 20, 147, 0.12)",
+      "medium": "rgba(255, 20, 147, 0.3)"
+    }
+  },
+  "typography": {
+    "font_families": {
+      "heading": "Playfair Display",
+      "body": "Outfit",
+      "accent": "Caveat"
+    },
+    "sizes": {
+      "h1": { "fontSize": 36, "lineHeight": 44, "letterSpacing": -0.5 },
+      "h2": { "fontSize": 28, "lineHeight": 36, "letterSpacing": -0.3 },
+      "h3": { "fontSize": 22, "lineHeight": 28 },
+      "body": { "fontSize": 16, "lineHeight": 24 },
+      "small": { "fontSize": 14, "lineHeight": 20 },
+      "button": { "fontSize": 18, "letterSpacing": 0.5, "fontWeight": "600" }
+    }
+  },
+  "spacing_and_layout": {
+    "padding": {
+      "screen": 24,
+      "card": 20,
+      "element": 16,
+      "small": 8
+    },
+    "radius": {
+      "button": 30,
+      "card": 24,
+      "input": 16,
+      "image": 20,
+      "bottom_sheet": 32
+    },
+    "touch_targets": {
+      "min_height": 56,
+      "icon_button": 48
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": {
+        "backgroundColor": "#FF1493",
+        "borderRadius": 30,
+        "height": 56,
+        "alignItems": "center",
+        "justifyContent": "center",
+        "shadowColor": "#FF1493",
+        "shadowOffset": { "width": 0, "height": 8 },
+        "shadowOpacity": 0.3,
+        "shadowRadius": 16,
+        "elevation": 8
+      },
+      "secondary": {
+        "backgroundColor": "#FFF0F5",
+        "borderRadius": 30,
+        "height": 56,
+        "borderWidth": 1.5,
+        "borderColor": "rgba(255, 20, 147, 0.2)",
+        "alignItems": "center",
+        "justifyContent": "center"
+      }
+    },
+    "cards": {
+      "storybook_card": {
+        "backgroundColor": "#FFFFFF",
+        "borderRadius": 24,
+        "padding": 20,
+        "shadowColor": "#2A0800",
+        "shadowOffset": { "width": 0, "height": 12 },
+        "shadowOpacity": 0.08,
+        "shadowRadius": 24,
+        "elevation": 5,
+        "borderWidth": 1,
+        "borderColor": "rgba(255, 20, 147, 0.08)"
+      }
+    },
+    "bottom_sheet": {
+      "backgroundColor": "#FFFFFF",
+      "borderTopLeftRadius": 32,
+      "borderTopRightRadius": 32,
+      "shadowColor": "#000",
+      "shadowOffset": { "width": 0, "height": -4 },
+      "shadowOpacity": 0.1,
+      "shadowRadius": 16,
+      "elevation": 15
+    }
+  },
+  "motion_and_interactions": {
+    "drumroll": "Use react-native-reanimated for a bouncing, scaling emoji shared value, concluding with a swift scale-out and fade upon password unlock.",
+    "page_transitions": "Slide-up for bottom sheets; soft fade-and-scale for the storybook cards to feel like turning a physical page.",
+    "buttons": "Implement a reanimated scale down to 0.95 on press-in, and a soft spring back on press-out to feel tactile and playful."
+  },
+  "media": {
+    "images": [
+      {
+        "category": "background",
+        "usage": "Welcome screen and Drumroll screen immersive background",
+        "url": "https://static.prod-images.emergentagent.com/jobs/42a5fe19-1fe5-4564-9dac-01b582beb5b8/images/dfca9d65e66e2aaffa03ab278c90348443b263e53ed1fdf261a03431793fa62a.png",
+        "description": "Soft elegant Barbie pink and pearl fluid gradient"
+      },
+      {
+        "category": "storybook_cover",
+        "usage": "Finale Storybook Cover Page",
+        "url": "https://static.prod-images.emergentagent.com/jobs/42a5fe19-1fe5-4564-9dac-01b582beb5b8/images/675fdec9235ca2c8a3afe66928eb4c72b516b9b359f2ec3396620cdaa68acfd8.png",
+        "description": "Minimalist pink leather texture with rose gold hearts"
+      },
+      {
+        "category": "placeholder_memory",
+        "usage": "Mock image for a previous date memory or polaroid grid",
+        "url": "https://images.unsplash.com/photo-1746159595903-1f4ec85e090b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwxfHxwb2xhcm9pZCUyMHBob3RvcyUyMG1lbW9yaWVzJTIwY291cGxlfGVufDB8fHx8MTc3NTgxMjA4NXww&ixlib=rb-4.1.0&q=85",
+        "description": "Two people pose for a polaroid picture"
+      },
+      {
+        "category": "date_stop_dinner",
+        "usage": "Mock image for a dinner stop detail card",
+        "url": "https://images.unsplash.com/photo-1760669346426-621c33deb1fb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHw0fHxyb21hbnRpYyUyMGRhdGUlMjBuaWdodCUyMGRpbm5lciUyMGNvdXBsZXxlbnwwfHx8fDE3NzU4MTIwODV8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Romantic date night dinner couple"
+      }
+    ],
+    "icons": {
+      "library": "@expo/vector-icons",
+      "style": "Feather for clean UI, Ionicons for solid/filled heart shapes"
+    }
+  },
+  "development_rules": {
+    "styling": "Use StyleSheet.create exclusively. No CSS, no Tailwind, no classNames. Apply structural logic tailored for React Native.",
+    "testing": "All interactive and key informational elements MUST include a `testID` (React Native standard) attribute, which maps to data-testid for automated testing (e.g., testID='login-button').",
+    "architecture": "Use expo-router for file-based navigation. Wrap all main screen content in SafeAreaView to prevent notch collisions.",
+    "glassmorphism": "Use the expo-blur (BlurView) package positioned absolutely (StyleSheet.absoluteFill) to achieve glassmorphism overlays on top of the fluid pink background."
+  },
+  "instructions_to_main_agent": [
+    "Build the app strictly as an Expo React Native mobile application using .js/.jsx files.",
+    "Do not use HTML tags like <div> or Tailwind CSS. Use native components: View, Text, TouchableOpacity, Image, ScrollView, FlatList.",
+    "Implement navigation using expo-router.",
+    "Apply the exact styling constraints defined in this guideline. Emphasize large touch targets (minHeight 56) and generous screen padding (24).",
+    "Use the generated fluid gradient image for the background of the Welcome and Drumroll screens via ImageBackground or an absolutely positioned Image.",
+    "For the Storybook UI, implement rich shadow effects around the cards and use the provided 'storybook_cover' image for the cover component.",
+    "Use Playfair Display (or a standard serif fallback if loading fonts is complex) for primary headings to give the romantic storybook feel, paired with a geometric sans for body.",
+    "CRITICAL: All interactive elements MUST have `testID` attributes in kebab-case to satisfy testing requirements."
+  ]
+}
