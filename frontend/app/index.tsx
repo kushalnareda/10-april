@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -10,71 +10,24 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../context/AuthContext";
-import { apiCall } from "../utils/api";
 
 const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/42a5fe19-1fe5-4564-9dac-01b582beb5b8/images/dfca9d65e66e2aaffa03ab278c90348443b263e53ed1fdf261a03431793fa62a.png";
 
 export default function IndexScreen() {
   const router = useRouter();
-  const { user, isLoading, login, checkAuth } = useAuth();
-  const processed = useRef(false);
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    // Handle OAuth callback (web only) — REMINDER: DO NOT HARDCODE THE URL OR ADD FALLBACKS
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      const hash = window.location.hash;
-      if (hash.includes("session_id=") && !processed.current) {
-        processed.current = true;
-        const sessionId = hash.split("session_id=")[1]?.split("&")[0];
-        if (sessionId) {
-          exchangeSession(sessionId);
-          return;
-        }
-      }
-    }
-    // If already auth, redirect
     if (!isLoading && user) {
       router.replace("/planner");
     }
   }, [user, isLoading]);
 
-  const exchangeSession = async (sessionId: string) => {
-    try {
-      const res = await apiCall("/auth/session", {
-        method: "POST",
-        body: JSON.stringify({ session_id: sessionId }),
-      });
-      await login(res.session_token, res.user);
-      // Clear hash from URL
-      if (Platform.OS === "web" && typeof window !== "undefined") {
-        window.history.replaceState(null, "", window.location.pathname);
-      }
-      router.replace("/planner");
-    } catch (e) {
-      console.error("Session exchange failed", e);
-    }
-  };
-
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF1493" />
-      </View>
-    );
-  }
-
-  // Check if processing OAuth (hash contains session_id)
-  const isProcessingOAuth =
-    Platform.OS === "web" &&
-    typeof window !== "undefined" &&
-    window.location.hash.includes("session_id=");
-
-  if (isProcessingOAuth) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF1493" />
-        <Text style={styles.loadingText}>Signing you in...</Text>
       </View>
     );
   }

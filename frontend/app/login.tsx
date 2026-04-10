@@ -1,32 +1,56 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Image,
   TouchableOpacity,
+  TextInput,
   Platform,
+  ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useAuth } from "../context/AuthContext";
+import { apiCall } from "../utils/api";
 
 const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/42a5fe19-1fe5-4564-9dac-01b582beb5b8/images/dfca9d65e66e2aaffa03ab278c90348443b263e53ed1fdf261a03431793fa62a.png";
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "";
-
 export default function LoginScreen() {
   const router = useRouter();
+  const { login } = useAuth();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleGoogleSignIn = () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      const redirectUrl = window.location.origin + "/";
-      window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  const handleLogin = async () => {
+    if (!name.trim() || !email.trim()) {
+      setError("Please enter your name and email.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const res = await apiCall("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+      });
+      await login(res.session_token, res.user);
+      router.replace("/planner");
+    } catch (e: any) {
+      setError(e.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <Image source={{ uri: BG_URL }} style={styles.bgImage} />
       <View style={styles.overlay} />
 
@@ -39,25 +63,49 @@ export default function LoginScreen() {
       </TouchableOpacity>
 
       <View style={styles.card}>
-        <Text style={styles.emoji}>🔐</Text>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.subtitle}>Sign in to continue your adventure</Text>
+        <Text style={styles.emoji}>💕</Text>
+        <Text style={styles.title}>Welcome</Text>
+        <Text style={styles.subtitle}>Enter your details to continue</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Your name"
+          placeholderTextColor="#B09CC0"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Your email"
+          placeholderTextColor="#B09CC0"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TouchableOpacity
-          testID="google-signin-btn"
-          style={styles.googleBtn}
-          onPress={handleGoogleSignIn}
+          testID="login-btn"
+          style={[styles.btn, loading && styles.btnDisabled]}
+          onPress={handleLogin}
           activeOpacity={0.85}
+          disabled={loading}
         >
-          <Text style={styles.googleIcon}>G</Text>
-          <Text style={styles.googleBtnText}>Continue with Google</Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.btnText}>Let's go ✨</Text>
+          )}
         </TouchableOpacity>
 
-        <Text style={styles.disclaimer}>
-          Your memories are safe and private 💕
-        </Text>
+        <Text style={styles.disclaimer}>Your memories are safe and private 💕</Text>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -86,32 +134,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6A5D7B",
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: 32,
   },
-  googleBtn: {
-    flexDirection: "row",
-    alignItems: "center",
+  input: {
+    width: "100%",
+    maxWidth: 320,
     backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: "#1A1423",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,20,147,0.2)",
+    marginBottom: 14,
+  },
+  error: {
+    color: "#FF1493",
+    fontSize: 13,
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  btn: {
+    backgroundColor: "#FF1493",
     borderRadius: 30,
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,20,147,0.25)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    paddingHorizontal: 48,
+    marginTop: 8,
     marginBottom: 24,
-    minWidth: 280,
-    justifyContent: "center",
+    minWidth: 200,
+    alignItems: "center",
+    shadowColor: "#FF1493",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  googleIcon: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#4285F4",
-    marginRight: 12,
-  },
-  googleBtnText: { fontSize: 17, fontWeight: "600", color: "#1A1423" },
+  btnDisabled: { opacity: 0.6 },
+  btnText: { color: "#fff", fontSize: 18, fontWeight: "700", letterSpacing: 0.5 },
   disclaimer: { fontSize: 13, color: "#9E8FAB", textAlign: "center" },
 });

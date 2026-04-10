@@ -79,7 +79,13 @@ agenthub/agents/youtube/db
 memory/test_credentials.md
 
 # Mobile development
-android-sdk/-e 
+android-sdk/-e
+.metro-cache/
+frontend/.metro-cache/
+
+# Generated
+backend/requirements_fixed.txt
+
 # Environment files
 *.env
 *.env.*

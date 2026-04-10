@@ -148,52 +148,32 @@ async def auto_seed_session(user_id: str):
 
 # ─── Auth ──────────────────────────────────────────────────────────────────────
 
-@api_router.post("/auth/session")
-async def exchange_session(request: Request, response: Response):
-    body = await request.json()
-    session_id = body.get("session_id")
-    if not session_id:
-        raise HTTPException(status_code=400, detail="session_id required")
+class SimpleLoginRequest(BaseModel):
+    email: str
+    name: str
 
-    # Call Emergent auth to get user data
-    try:
-        res = requests.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": session_id},
-            timeout=10
-        )
-        if res.status_code != 200:
-            raise HTTPException(status_code=401, detail="Invalid session_id")
-        data = res.json()
-    except requests.RequestException:
-        raise HTTPException(status_code=503, detail="Auth service unavailable")
+@api_router.post("/auth/login")
+async def simple_login(body: SimpleLoginRequest, response: Response):
+    email = body.email.strip().lower()
+    name = body.name.strip()
 
-    email = data.get("email")
-    name = data.get("name", email)
-    picture = data.get("picture", "")
-    session_token = data.get("session_token")
-
-    # Upsert user
     existing = await db.users.find_one({"email": email}, {"_id": 0})
     if existing:
         user_id = existing["user_id"]
-        await db.users.update_one(
-            {"email": email},
-            {"$set": {"name": name, "picture": picture}}
-        )
+        await db.users.update_one({"email": email}, {"$set": {"name": name}})
     else:
         user_id = f"user_{uuid.uuid4().hex[:12]}"
         await db.users.insert_one({
             "user_id": user_id,
             "email": email,
             "name": name,
-            "picture": picture,
+            "picture": "",
             "created_at": datetime.now(timezone.utc)
         })
 
-    # Store session
+    session_token = uuid.uuid4().hex
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
-    await db.user_sessions.delete_many({"user_id": user_id})  # clean old
+    await db.user_sessions.delete_many({"user_id": user_id})
     await db.user_sessions.insert_one({
         "user_id": user_id,
         "session_token": session_token,
@@ -201,20 +181,17 @@ async def exchange_session(request: Request, response: Response):
         "created_at": datetime.now(timezone.utc)
     })
 
-    # Set httpOnly cookie
     response.set_cookie(
         key="session_token",
         value=session_token,
         httponly=True,
-        secure=True,
-        samesite="none",
+        secure=False,
+        samesite="lax",
         max_age=7 * 24 * 3600,
         path="/"
     )
 
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
-
-    # Auto-seed the template date plan for new users
     await auto_seed_session(user_id)
 
     return {"user": user, "session_token": session_token}

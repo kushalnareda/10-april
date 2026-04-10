@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView,
   Image, TextInput, Alert, ActivityIndicator, KeyboardAvoidingView,
-  Platform, Animated,
+  Platform, Animated, Modal,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
