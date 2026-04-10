@@ -11,7 +11,7 @@ const BG_URL =
 
 const DRUMROLL_EMOJIS = ["🎀","💕","✨","🌸","🎊","💖","🎉","🥁"];
 
-// ── Web Audio drum roll ────────────────────────────────────────────────────────
+// ── Realistic snare drum roll via Web Audio API ───────────────────────────────
 function playDrumRollSound() {
   if (Platform.OS !== "web" || typeof window === "undefined") return;
   try {
@@ -19,58 +19,126 @@ function playDrumRollSound() {
     if (!AudioCtx) return;
     const ctx = new AudioCtx() as AudioContext;
 
-    const playHit = (time: number, freq = 90, decay = 0.07) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, time);
-      osc.frequency.exponentialRampToValueAtTime(freq * 0.4, time + decay);
-      gain.gain.setValueAtTime(0.45, time);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time + decay);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(time);
-      osc.stop(time + decay + 0.02);
+    // Master compressor for cohesion
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -18;
+    comp.knee.value = 6;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.002;
+    comp.release.value = 0.12;
+    comp.connect(ctx.destination);
+
+    // ── Snare hit: tonal body + bandpass noise ──────────────────────────────
+    const playSnare = (time: number, vel: number) => {
+      const decay = 0.055 + vel * 0.03;
+
+      // Tonal body — two detuned triangle oscillators
+      [170, 285].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, time);
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.45, time + decay);
+        g.gain.setValueAtTime(vel * (i === 0 ? 0.55 : 0.35), time);
+        g.gain.exponentialRampToValueAtTime(0.0001, time + decay);
+        osc.connect(g); g.connect(comp);
+        osc.start(time); osc.stop(time + decay + 0.01);
+      });
+
+      // Snare wire buzz — bandpass-filtered white noise
+      const bufLen = Math.floor(ctx.sampleRate * (decay + 0.08));
+      const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+      const noise = ctx.createBufferSource();
+      noise.buffer = buf;
+
+      const bp = ctx.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.frequency.value = 3200;
+      bp.Q.value = 0.7;
+
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 1800;
+
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(vel * 0.9, time);
+      ng.gain.exponentialRampToValueAtTime(0.0001, time + decay + 0.06);
+
+      noise.connect(hp); hp.connect(bp); bp.connect(ng); ng.connect(comp);
+      noise.start(time); noise.stop(time + decay + 0.09);
+
+      // Crisp transient click
+      const click = ctx.createOscillator();
+      const cg = ctx.createGain();
+      click.type = "square";
+      click.frequency.value = 1200;
+      cg.gain.setValueAtTime(vel * 0.2, time);
+      cg.gain.exponentialRampToValueAtTime(0.0001, time + 0.012);
+      click.connect(cg); cg.connect(comp);
+      click.start(time); click.stop(time + 0.013);
     };
 
-    const playCymbal = (time: number) => {
-      const bufSize = Math.floor(ctx.sampleRate * 0.35);
-      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+    // ── Crash cymbal at the end ─────────────────────────────────────────────
+    const playCrash = (time: number) => {
+      const dur = 1.4;
+      const bufLen = Math.floor(ctx.sampleRate * dur);
+      const buf = ctx.createBuffer(2, bufLen, ctx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = buf.getChannelData(ch);
+        for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1;
+      }
       const src = ctx.createBufferSource();
-      src.buffer = buffer;
-      const hpf = ctx.createBiquadFilter();
-      hpf.type = "highpass";
-      hpf.frequency.value = 6000;
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.35, time);
-      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.35);
-      src.connect(hpf);
-      hpf.connect(gain);
-      gain.connect(ctx.destination);
-      src.start(time);
-      src.stop(time + 0.36);
+      src.buffer = buf;
+
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass"; hp.frequency.value = 5000;
+      const bp = ctx.createBiquadFilter();
+      bp.type = "peaking"; bp.frequency.value = 8000; bp.gain.value = 6;
+
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.55, time);
+      g.gain.setValueAtTime(0.55, time + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+
+      src.connect(hp); hp.connect(bp); bp.connect(g); g.connect(comp);
+      src.start(time); src.stop(time + dur + 0.05);
     };
 
-    // Accelerating roll: interval starts at 200ms → 40ms over ~2.8 s
-    let t = ctx.currentTime + 0.05;
-    let interval = 0.22;
-    const minInterval = 0.042;
-    const rollEnd = ctx.currentTime + 2.8;
+    // ── Big bass drum at the very end ────────────────────────────────────────
+    const playKick = (time: number) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(140, time);
+      osc.frequency.exponentialRampToValueAtTime(40, time + 0.28);
+      g.gain.setValueAtTime(0.9, time);
+      g.gain.exponentialRampToValueAtTime(0.0001, time + 0.32);
+      osc.connect(g); g.connect(comp);
+      osc.start(time); osc.stop(time + 0.33);
+    };
+
+    // ── Accelerating roll: 180 ms → 32 ms over 3 s, with crescendo ──────────
+    let t = ctx.currentTime + 0.08;
+    let interval = 0.18;
+    const minInterval = 0.032;
+    const rollEnd = ctx.currentTime + 3.0;
+    const startT = t;
 
     while (t < rollEnd) {
-      playHit(t);
+      const progress = Math.min((t - startT) / (rollEnd - startT), 1);
+      const vel = 0.28 + progress * 0.72;          // quiet → loud
+      playSnare(t, vel);
       t += interval;
-      interval = Math.max(minInterval, interval * 0.89);
+      interval = Math.max(minInterval, interval * 0.878);
     }
-    // Final cymbal crash
-    playCymbal(t);
-    // Big final bass hit
-    playHit(t + 0.01, 120, 0.25);
-  } catch (e) {
-    // silently ignore if audio not supported
-  }
+
+    // Final crash + kick on the downbeat
+    playCrash(t);
+    playKick(t + 0.01);
+
+  } catch (e) { /* silently ignore */ }
 }
 
 export default function DrumrollScreen() {

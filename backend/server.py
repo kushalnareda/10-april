@@ -453,7 +453,12 @@ async def get_photo(photo_id: str):
     photo = await db.photos.find_one({"photo_id": photo_id}, {"_id": 0})
     if not photo:
         raise HTTPException(status_code=404, detail="Photo not found")
-    img_bytes = base64.b64decode(photo["data"])
+    # Fix any missing base64 padding before decoding
+    data = photo["data"].strip()
+    missing = len(data) % 4
+    if missing:
+        data += "=" * (4 - missing)
+    img_bytes = base64.b64decode(data)
     return Response(content=img_bytes, media_type="image/jpeg")
 
 
