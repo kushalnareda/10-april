@@ -112,6 +112,7 @@ export default function StagesScreen() {
           {/* Stops */}
           {stops.map((stop) => {
             const status = getStopStatus(stop, stops);
+            const isRevealed = stop.unlocked || stop.done;
             return (
               <TouchableOpacity
                 key={stop.stop_id}
@@ -128,16 +129,19 @@ export default function StagesScreen() {
               >
                 <View style={[styles.emojiBox, status === "done" && styles.emojiDone]}>
                   <Text style={styles.emojiText}>
-                    {status === "done" ? "✓" : status === "locked" ? "🔒" : stop.emoji}
+                    {status === "done" ? "✓" : status === "locked" ? "🔒" : isRevealed ? stop.emoji : "✨"}
                   </Text>
                 </View>
                 <View style={styles.stopInfo}>
-                  <Text style={[styles.stopName, status === "locked" && styles.lockedText]}>
-                    {stop.name}
+                  <Text style={[styles.stopName, !isRevealed && styles.maskedText]}>
+                    {isRevealed ? stop.name : "???"}
                   </Text>
-                  {stop.location ? (
+                  {isRevealed && stop.location ? (
                     <Text style={styles.stopLocation}>📍 {stop.location}</Text>
                   ) : null}
+                  {!isRevealed && status === "current" && (
+                    <Text style={styles.revealHint}>enter the password to reveal</Text>
+                  )}
                   <StarDisplay rating={stop.rating} />
                 </View>
                 <View style={styles.stopStatus}>
@@ -226,6 +230,8 @@ const styles = StyleSheet.create({
   stopInfo: { flex: 1 },
   stopName: { fontSize: 16, fontWeight: "600", color: "#1A1423" },
   lockedText: { color: "#9E8FAB" },
+  maskedText: { color: "#C4B5D0", letterSpacing: 2 },
+  revealHint: { fontSize: 11, color: "#FF1493", marginTop: 2, fontStyle: "italic" },
   stopLocation: { fontSize: 13, color: "#6A5D7B", marginTop: 2 },
   stopStatus: { alignItems: "flex-end" },
   tapBadge: {

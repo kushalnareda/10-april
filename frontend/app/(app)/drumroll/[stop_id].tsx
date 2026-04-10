@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   SafeAreaView, Animated, Image, Alert, KeyboardAvoidingView, Platform,
@@ -10,6 +10,68 @@ const BG_URL =
   "https://static.prod-images.emergentagent.com/jobs/42a5fe19-1fe5-4564-9dac-01b582beb5b8/images/dfca9d65e66e2aaffa03ab278c90348443b263e53ed1fdf261a03431793fa62a.png";
 
 const DRUMROLL_EMOJIS = ["🎀","💕","✨","🌸","🎊","💖","🎉","🥁"];
+
+// ── Web Audio drum roll ────────────────────────────────────────────────────────
+function playDrumRollSound() {
+  if (Platform.OS !== "web" || typeof window === "undefined") return;
+  try {
+    const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx() as AudioContext;
+
+    const playHit = (time: number, freq = 90, decay = 0.07) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, time);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.4, time + decay);
+      gain.gain.setValueAtTime(0.45, time);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + decay);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(time);
+      osc.stop(time + decay + 0.02);
+    };
+
+    const playCymbal = (time: number) => {
+      const bufSize = Math.floor(ctx.sampleRate * 0.35);
+      const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const hpf = ctx.createBiquadFilter();
+      hpf.type = "highpass";
+      hpf.frequency.value = 6000;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.35, time);
+      gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.35);
+      src.connect(hpf);
+      hpf.connect(gain);
+      gain.connect(ctx.destination);
+      src.start(time);
+      src.stop(time + 0.36);
+    };
+
+    // Accelerating roll: interval starts at 200ms → 40ms over ~2.8 s
+    let t = ctx.currentTime + 0.05;
+    let interval = 0.22;
+    const minInterval = 0.042;
+    const rollEnd = ctx.currentTime + 2.8;
+
+    while (t < rollEnd) {
+      playHit(t);
+      t += interval;
+      interval = Math.max(minInterval, interval * 0.89);
+    }
+    // Final cymbal crash
+    playCymbal(t);
+    // Big final bass hit
+    playHit(t + 0.01, 120, 0.25);
+  } catch (e) {
+    // silently ignore if audio not supported
+  }
+}
 
 export default function DrumrollScreen() {
   const router = useRouter();
@@ -25,6 +87,9 @@ export default function DrumrollScreen() {
   const shake = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Play drum roll sound on mount
+    playDrumRollSound();
+
     // Looping bounce for emoji
     const loop = Animated.loop(
       Animated.sequence([
@@ -34,8 +99,18 @@ export default function DrumrollScreen() {
     );
     loop.start();
 
-    // Cycle emojis
-    const timer = setInterval(() => setEmojiIdx((i) => (i + 1) % DRUMROLL_EMOJIS.length), 600);
+    // Cycle emojis — speed up during roll
+    let speed = 600;
+    let timer: ReturnType<typeof setInterval>;
+    const startCycle = (ms: number) => {
+      timer = setInterval(() => {
+        setEmojiIdx((i) => (i + 1) % DRUMROLL_EMOJIS.length);
+        speed = Math.max(80, speed - 30);
+        clearInterval(timer);
+        startCycle(speed);
+      }, ms);
+    };
+    startCycle(speed);
 
     return () => { loop.stop(); clearInterval(timer); };
   }, []);
