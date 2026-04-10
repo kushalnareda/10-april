@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  SafeAreaView, RefreshControl, ActivityIndicator,
+  SafeAreaView, ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../../context/AuthContext";
@@ -20,23 +20,23 @@ export default function PlannerScreen() {
   const { user, logout } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   const fetchSessions = useCallback(async () => {
     try {
       const data = await apiCall("/sessions");
       setSessions(data);
+      // Auto-navigate to the single date session
+      if (data.length === 1) {
+        router.replace(`/stages/${data[0].session_id}`);
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, []);
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
-
-  const onRefresh = () => { setRefreshing(true); fetchSessions(); };
 
   const renderSession = ({ item }: { item: Session }) => {
     const progress = item.total_stops > 0 ? item.done_stops / item.total_stops : 0;
@@ -96,25 +96,14 @@ export default function PlannerScreen() {
           keyExtractor={(i) => i.session_id}
           renderItem={renderSession}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF1493" />}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🌸</Text>
-              <Text style={styles.emptyTitle}>No dates yet</Text>
-              <Text style={styles.emptySubtitle}>Plan your first surprise date below!</Text>
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color="#FF1493" />
+              <Text style={styles.loadingText}>Getting your date ready 💕</Text>
             </View>
           }
         />
       )}
-
-      <TouchableOpacity
-        testID="create-date-btn"
-        style={styles.fab}
-        onPress={() => router.push("/planner/create")}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.fabText}>+ Plan a Date</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -188,7 +177,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   fabText: { color: "#fff", fontSize: 17, fontWeight: "700" },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center" },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 100 },
+  loadingText: { marginTop: 12, color: "#6A5D7B", fontSize: 16 },
   emptyState: { alignItems: "center", paddingTop: 80 },
   emptyEmoji: { fontSize: 56, marginBottom: 16 },
   emptyTitle: { fontSize: 22, fontWeight: "700", color: "#1A1423", marginBottom: 8 },

@@ -102,6 +102,50 @@ class PhotoUpload(BaseModel):
     detour_id: Optional[str] = None
 
 
+# ─── Template Date (auto-seeded for every new user) ───────────────────────────
+
+TEMPLATE_STOPS = [
+    {"name": "Start Point",    "location": "Hauz Khas Metro Station",       "description": "The adventure begins here! 🚇 Meet me at the main gate — look for the person with the biggest smile.", "password": "hauz",     "order": 1, "emoji": "📍"},
+    {"name": "Food Stop",      "location": "Lea Izakaya",                   "description": "Our favourite ramen spot 🍣 Order whatever your heart desires — tonight there is no budget 🌸",          "password": "sashimi",  "order": 2, "emoji": "🍣"},
+    {"name": "Gaming Stop",    "location": "Cyber Café — Tekken / Arcade",  "description": "Time to settle it once and for all 🎮 Best of 5 rounds. Winner picks dessert later 👑",               "password": "tekken",   "order": 3, "emoji": "🎮"},
+    {"name": "Memory Stop",    "location": "Tea + Photobooth",              "description": "Chai time ☕ + we are capturing this day forever 📸 Get your best poses ready!",                         "password": "chai",     "order": 4, "emoji": "📸"},
+    {"name": "Open End",       "location": "Wherever the night takes us",   "description": "No plans, no rules 💕 Just us and whatever happens next. Follow your heart ✨",                           "password": "cookie",   "order": 5, "emoji": "❓"},
+]
+
+async def auto_seed_session(user_id: str):
+    """Auto-create the template date plan for new users."""
+    count = await db.date_sessions.count_documents({"user_id": user_id})
+    if count > 0:
+        return  # already has sessions
+    now = datetime.now(timezone.utc)
+    session_id = f"sess_{uuid.uuid4().hex[:16]}"
+    await db.date_sessions.insert_one({
+        "session_id": session_id,
+        "user_id": user_id,
+        "title": "Taara & Cookie's Day Out 💕",
+        "date": "2026-04-10",
+        "created_at": now,
+    })
+    for stop in TEMPLATE_STOPS:
+        await db.stops.insert_one({
+            "stop_id": f"stop_{uuid.uuid4().hex[:16]}",
+            "session_id": session_id,
+            "name": stop["name"],
+            "location": stop["location"],
+            "description": stop["description"],
+            "password_hash": hash_stop_password(stop["password"]),
+            "order": stop["order"],
+            "emoji": stop["emoji"],
+            "unlocked": False,
+            "done": False,
+            "rating": None,
+            "comment": None,
+            "photo_ids": [],
+            "detour": None,
+            "created_at": now,
+        })
+
+
 # ─── Auth ──────────────────────────────────────────────────────────────────────
 
 @api_router.post("/auth/session")
@@ -169,6 +213,10 @@ async def exchange_session(request: Request, response: Response):
     )
 
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+
+    # Auto-seed the template date plan for new users
+    await auto_seed_session(user_id)
+
     return {"user": user, "session_token": session_token}
 
 
