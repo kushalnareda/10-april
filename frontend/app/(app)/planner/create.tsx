@@ -50,7 +50,6 @@ export default function CreateSessionScreen() {
   const [saving, setSaving] = useState(false);
 
   const addStop = () => {
-    if (stops.length >= 10) return;
     setStops([...stops, { name: "", location: "", description: "", password: "", emoji: "📍" }]);
   };
 
@@ -125,7 +124,7 @@ export default function CreateSessionScreen() {
           </View>
 
           {/* Stops */}
-          <Text style={styles.sectionTitle}>Stops ({stops.length}/10)</Text>
+          <Text style={styles.sectionTitle}>Stops ({stops.length})</Text>
           {stops.map((stop, idx) => (
             <View key={idx} style={styles.stopCard}>
               <View style={styles.stopHeader}>
@@ -187,11 +186,9 @@ export default function CreateSessionScreen() {
             </View>
           ))}
 
-          {stops.length < 10 && (
-            <TouchableOpacity testID="add-stop-btn" style={styles.addBtn} onPress={addStop}>
-              <Text style={styles.addBtnText}>+ Add Another Stop</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity testID="add-stop-btn" style={styles.addBtn} onPress={addStop}>
+            <Text style={styles.addBtnText}>+ Add Another Stop</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             testID="save-session-btn"

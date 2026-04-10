@@ -257,7 +257,7 @@ async def get_session(session_id: str, request: Request):
     stops_raw = await db.stops.find(
         {"session_id": session_id},
         {"_id": 0, "password_hash": 0}
-    ).sort("order", 1).to_list(100)
+    ).sort("order", 1).to_list(None)
     return {"session": session, "stops": stops_raw}
 
 
